@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: devstand_api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file: ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - devstand
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: devstand_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: devstand
+      POSTGRES_USER: devstand
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devstand"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - devstand
+
+  minio:
+    image: minio/minio:latest
+    container_name: devstand_minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - devstand
+
+  minio_init:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/devstand;
+        mc anonymous set download local/devstand;
+      "
+    networks:
+      - devstand
+
+  frontend:
+    build: ./frontend
+    container_name: devstand_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - devstand
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  devstand:
+    driver: bridge

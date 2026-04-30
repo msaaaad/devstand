@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body { background: #0D1117; color: #E6EDF3; font-family: 'DM Sans', sans-serif; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #161B22; }
+  ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 3px; }
+}
+
+@layer components {
+  .card { @apply bg-surface-raised border border-surface-border rounded-xl; }
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-accent hover:bg-accent-hover text-white; }
+  .btn-ghost { @apply btn hover:bg-surface-overlay text-tx-secondary hover:text-tx-primary; }
+  .btn-danger { @apply btn bg-red-500/10 hover:bg-red-500/20 text-red-400; }
+  .input { @apply w-full bg-surface-overlay border border-surface-border rounded-lg px-3 py-2 text-tx-primary placeholder-tx-muted text-sm focus:outline-none focus:border-accent transition-colors; }
+  .badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium; }
+  .stage-badge { @apply badge; }
+}
+
+.stage-backlog { background: rgba(72,79,88,0.2); color: #8B949E; }
+.stage-todo    { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.stage-doing   { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.stage-done    { background: rgba(34,197,94,0.15); color: #4ade80; }
+.stage-deployed { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.slide-up-enter-active { transition: all 0.2s ease; }
+.slide-up-enter-from { transform: translateY(8px); opacity: 0; }

@@ -1,0 +1,174 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  manager
+  team_lead
+  employee
+}
+
+enum MilestoneStatus {
+  active
+  completed
+  archived
+}
+
+enum TaskStage {
+  backlog
+  todo
+  doing
+  done
+  deployed
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum NotificationType {
+  task_assigned
+  task_approved
+  task_rejected
+  task_self_assigned
+  milestone_completed
+}
+
+enum ReactionType {
+  insightful
+  impressive
+  question
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(employee)
+  color     String   @default("#6366f1")
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  standups            Standup[]
+  assignedTasks       MilestoneTask[] @relation("AssignedTo")
+  createdTasks        MilestoneTask[] @relation("CreatedBy")
+  approvedTasks       MilestoneTask[] @relation("ApprovedBy")
+  createdMilestones   Milestone[]
+  notifications       Notification[]
+  learningPosts       LearningPost[]
+  learningReactions   LearningReaction[]
+}
+
+model Standup {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  date        DateTime  @db.Date
+  eodSummary  String?
+  isLocked    Boolean   @default(false)
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks StandupTask[]
+
+  @@unique([userId, date])
+}
+
+model StandupTask {
+  id               Int      @id @default(autoincrement())
+  standupId        Int
+  title            String
+  timeSpentMinutes Int      @default(0)
+  challenge        String?
+  learned          String?
+  order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  standup Standup @relation(fields: [standupId], references: [id], onDelete: Cascade)
+}
+
+model Milestone {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String?
+  deadline    DateTime?       @db.Date
+  createdById Int
+  status      MilestoneStatus @default(active)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  createdBy User            @relation(fields: [createdById], references: [id])
+  tasks     MilestoneTask[]
+}
+
+model MilestoneTask {
+  id             Int            @id @default(autoincrement())
+  milestoneId    Int
+  title          String
+  description    String?
+  stage          TaskStage      @default(backlog)
+  approvalStatus ApprovalStatus @default(approved)
+  rejectionNote  String?
+  createdById    Int
+  assignedToId   Int?
+  approvedById   Int?
+  order          Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  milestone  Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  createdBy  User      @relation("CreatedBy", fields: [createdById], references: [id])
+  assignedTo User?     @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  approvedBy User?     @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  data      Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LearningPost {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  body      String
+  minioKey  String?
+  imageUrl  String?
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions LearningReaction[]
+}
+
+model LearningReaction {
+  id        Int          @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  post LearningPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type])
+}

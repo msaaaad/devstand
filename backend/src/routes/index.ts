@@ -1,0 +1,71 @@
+import { Router } from 'express'
+import multer from 'multer'
+import { authenticate, canApprove, canManageMilestones, managerOnly } from '../middleware/auth'
+import * as auth from '../controllers/auth.controller'
+import * as standup from '../controllers/standup.controller'
+import * as milestone from '../controllers/milestone.controller'
+import * as history from '../controllers/history.controller'
+import * as notification from '../controllers/notification.controller'
+import * as learning from '../controllers/learning.controller'
+
+const router = Router()
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
+
+// --- Auth (public) ---
+router.post('/auth/register', auth.register)
+router.post('/auth/login', auth.login)
+
+// --- Protected ---
+router.use(authenticate)
+
+// Auth
+router.get('/auth/me', auth.me)
+router.post('/auth/profile', upload.single('avatar'), auth.updateProfile)
+router.get('/users', auth.listUsers)
+
+// Standup
+router.get('/standup/today', standup.todayBoard)
+router.get('/standup/mine', standup.mine)
+router.post('/standup/tasks', standup.addTask)
+router.put('/standup/tasks/:id', standup.updateTask)
+router.delete('/standup/tasks/:id', standup.deleteTask)
+router.put('/standup/eod', standup.updateEod)
+router.post('/standup/submit', standup.submit)
+
+// Milestones
+router.get('/milestones', milestone.index)
+router.get('/milestones/archived', milestone.archived)
+router.get('/milestones/:id', milestone.show)
+router.post('/milestones', canManageMilestones, milestone.store)
+router.put('/milestones/:id', canManageMilestones, milestone.update)
+router.put('/milestones/:id/archive', managerOnly, milestone.archive)
+router.get('/milestones/:id/tasks/pending', canApprove, milestone.pendingTasks)
+router.post('/milestones/:id/tasks', milestone.storeTask)
+
+// Milestone Tasks
+router.put('/tasks/:id', milestone.updateTask)
+router.put('/tasks/:id/stage', milestone.moveStage)
+router.put('/tasks/:id/assign', canApprove, milestone.assignTask)
+router.put('/tasks/:id/self-assign', milestone.selfAssign)
+router.put('/tasks/:id/approve', canApprove, milestone.approveTask)
+router.put('/tasks/:id/reject', canApprove, milestone.rejectTask)
+router.delete('/tasks/:id', canApprove, milestone.deleteTask)
+
+// History
+router.get('/history', history.historyIndex)
+router.get('/history/:id', history.historyShow)
+
+// Notifications
+router.get('/notifications', notification.index)
+router.put('/notifications/read-all', notification.markAllRead)
+router.put('/notifications/:id/read', notification.markRead)
+
+// Learning
+router.get('/learning', learning.index)
+router.post('/learning', upload.single('image'), learning.store)
+router.put('/learning/:id', learning.update)
+router.delete('/learning/:id', learning.destroy)
+router.post('/learning/:id/react', learning.react)
+router.put('/learning/:id/pin', managerOnly, learning.pin)
+
+export default router
