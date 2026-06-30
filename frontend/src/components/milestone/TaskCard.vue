@@ -6,12 +6,12 @@
       <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button v-if="canApprove && task.approvalStatus === 'pending'"
           @click.stop="$emit('approve', task.id)"
-          class="btn text-[10px] py-0.5 px-1.5 bg-green-500/15 text-green-400">✓</button>
+          class="flex items-center justify-center w-6 h-6 rounded bg-green-500/15 text-green-400 hover:bg-green-500/30 transition-colors text-sm font-bold">✓</button>
         <button v-if="canApprove && task.approvalStatus === 'pending'"
           @click.stop="$emit('reject', task)"
-          class="btn text-[10px] py-0.5 px-1.5 bg-red-500/15 text-red-400">✕</button>
+          class="flex items-center justify-center w-6 h-6 rounded bg-red-500/15 text-red-400 hover:bg-red-500/30 transition-colors text-sm font-bold">✕</button>
         <button v-if="canApprove" @click.stop="$emit('delete', task.id)"
-          class="btn text-[10px] py-0.5 px-1.5 text-tx-muted hover:text-red-400">🗑</button>
+          class="flex items-center justify-center w-6 h-6 rounded bg-red-500/15 text-red-400 hover:bg-red-500/30 transition-colors text-base">🗑</button>
       </div>
     </div>
 
@@ -44,19 +44,29 @@
         class="text-xs text-accent hover:underline">Take it</button>
       <div v-else></div>
 
-      <!-- Stage move -->
-      <select v-if="task.approvalStatus === 'approved' && canMove"
-        :value="task.stage" @change="onStageChange"
-        class="text-[10px] bg-transparent text-tx-muted border-0 outline-none cursor-pointer hover:text-tx-primary"
-        @click.stop>
-        <option v-for="s in stages" :key="s" :value="s">→ {{ s }}</option>
-      </select>
+      <!-- Stage move dropdown -->
+      <div v-if="task.approvalStatus === 'approved' && canMove"
+        class="relative" @click.stop>
+        <button @click="showStageMenu = !showStageMenu"
+          class="text-[10px] text-tx-muted hover:text-tx-primary flex items-center gap-1 transition-colors">
+          → {{ task.stage }} <span class="text-[8px] leading-none">▾</span>
+        </button>
+        <div v-if="showStageMenu"
+          class="absolute right-0 bottom-full mb-1 bg-surface-overlay border border-surface-border rounded-lg py-1 z-50 min-w-[100px] shadow-lg">
+          <button v-for="s in availableStages" :key="s"
+            @click="onStageChange(s)"
+            class="w-full text-left px-3 py-1.5 text-[11px] hover:bg-surface-raised transition-colors"
+            :class="s === task.stage ? 'text-tx-primary font-semibold' : 'text-tx-secondary'">
+            → {{ s }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 
 const props = defineProps<{ task: any }>()
@@ -69,9 +79,19 @@ const isMyTask = computed(() => props.task.assignedTo?.id === me.value?.id)
 const canMove = computed(() => isMyTask.value || canApprove.value)
 const canSelfAssign = computed(() => me.value?.role === 'employee' || canApprove.value)
 
-const stages = ['backlog','todo','doing','done','deployed']
+const allStages = ['backlog', 'todo', 'doing', 'done', 'deployed']
+const availableStages = computed(() =>
+  canApprove.value ? allStages : ['doing', 'done']
+)
 
-function onStageChange(e: Event) {
-  emit('stage-change', props.task.id, (e.target as HTMLSelectElement).value)
+const showStageMenu = ref(false)
+
+function onStageChange(stage: string) {
+  showStageMenu.value = false
+  emit('stage-change', props.task.id, stage)
 }
+
+function closeMenu() { showStageMenu.value = false }
+onMounted(() => document.addEventListener('click', closeMenu))
+onUnmounted(() => document.removeEventListener('click', closeMenu))
 </script>

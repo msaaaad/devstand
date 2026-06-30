@@ -29,6 +29,7 @@ export default createStore({
     me: s => s.user,
     isManager: s => s.user?.role === 'manager',
     isLead: s => s.user?.role === 'team_lead',
+    isSuperAdmin: s => s.user?.role === 'superadmin',
     canApprove: s => ['manager','team_lead'].includes(s.user?.role),
     canManageMilestones: s => ['manager','team_lead'].includes(s.user?.role),
   },
@@ -98,9 +99,8 @@ export default createStore({
       commit('SET_AUTH', data)
       return data
     },
-    async register({ commit }, payload) {
+    async register(_, payload) {
       const { data } = await api.post('/auth/register', payload)
-      commit('SET_AUTH', data)
       return data
     },
     logout({ commit }) {

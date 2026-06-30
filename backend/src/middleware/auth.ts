@@ -17,7 +17,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       where: { id: payload.userId },
       select: {
         id: true, name: true, email: true,
-        role: true, color: true, avatar: true,
+        role: true, isApproved: true, color: true, avatar: true,
         createdAt: true, updatedAt: true,
       },
     })
@@ -41,3 +41,4 @@ export const requireRole = (...roles: string[]) =>
 export const canApprove = requireRole('manager', 'team_lead')
 export const canManageMilestones = requireRole('manager', 'team_lead')
 export const managerOnly = requireRole('manager')
+export const superAdminOnly = requireRole('superadmin')

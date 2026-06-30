@@ -68,6 +68,17 @@ services:
     networks:
       - devstand
 
+  adminer:
+    image: adminer:latest
+    container_name: devstand_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - devstand
+
   frontend:
     build: ./frontend
     container_name: devstand_frontend

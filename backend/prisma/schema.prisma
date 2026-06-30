@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum Role {
+  superadmin
   manager
   team_lead
   employee
@@ -48,17 +49,31 @@ enum ReactionType {
   question
 }
 
+enum LeaveType {
+  casual
+  sick
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(employee)
-  color     String   @default("#6366f1")
-  avatar    String?
-  createdAt DateTime @default(now())
+  role       Role     @default(employee)
+  isApproved Boolean  @default(false)
+  color      String   @default("#6366f1")
+  avatar     String?
+  createdAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  leaveBalance        LeaveBalance?
+  leaveRequests       LeaveRequest[]
   standups            Standup[]
   assignedTasks       MilestoneTask[] @relation("AssignedTo")
   createdTasks        MilestoneTask[] @relation("CreatedBy")
@@ -158,6 +173,32 @@ model LearningPost {
 
   user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   reactions LearningReaction[]
+}
+
+model LeaveBalance {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  casual    Int      @default(10)
+  sick      Int      @default(12)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LeaveRequest {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  type        LeaveType
+  subject     String
+  description String
+  fromDate    DateTime    @db.Date
+  toDate      DateTime    @db.Date
+  days        Int
+  status      LeaveStatus @default(pending)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model LearningReaction {

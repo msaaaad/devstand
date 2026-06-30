@@ -11,7 +11,6 @@ const registerSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['manager','team_lead','employee']).optional(),
   color: z.string().length(7).optional(),
 })
 
@@ -35,7 +34,7 @@ export async function register(req: Request, res: Response) {
   const parsed = registerSchema.safeParse(req.body)
   if (!parsed.success) { res.status(422).json({ errors: parsed.error.flatten() }); return }
 
-  const { name, email, password, role, color } = parsed.data
+  const { name, email, password, color } = parsed.data
 
   const exists = await prisma.user.findUnique({ where: { email } })
   if (exists) { res.status(409).json({ message: 'Email already registered' }); return }
@@ -44,11 +43,11 @@ export async function register(req: Request, res: Response) {
   const available = COLORS.filter(c => !usedColors.includes(c))
   const assignedColor = color ?? (available[0] ?? COLORS[Math.floor(Math.random() * COLORS.length)])
 
-  const user = await prisma.user.create({
-    data: { name, email, password: await bcrypt.hash(password, 10), role: role ?? 'employee', color: assignedColor },
+  await prisma.user.create({
+    data: { name, email, password: await bcrypt.hash(password, 10), role: 'employee', isApproved: false, color: assignedColor },
   })
 
-  res.status(201).json({ user: formatUser(user), token: signToken(user.id, user.role) })
+  res.status(201).json({ message: 'Account created. Please wait for admin approval before logging in.' })
 }
 
 export async function login(req: Request, res: Response) {
@@ -58,6 +57,10 @@ export async function login(req: Request, res: Response) {
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } })
   if (!user || !(await bcrypt.compare(parsed.data.password, user.password))) {
     res.status(401).json({ message: 'Invalid credentials' }); return
+  }
+
+  if (!user.isApproved) {
+    res.status(403).json({ message: 'Your account is pending approval. Please contact the admin.' }); return
   }
 
   res.json({ user: formatUser(user), token: signToken(user.id, user.role) })
@@ -87,7 +90,10 @@ export async function updateProfile(req: AuthRequest, res: Response) {
 export async function listUsers(req: AuthRequest, res: Response) {
   const { role } = req.query
   const users = await prisma.user.findMany({
-    where: role ? { role: role as any } : undefined,
+    where: {
+      isApproved: true,
+      role: role ? { equals: role as any } : { not: 'superadmin' },
+    },
     select: { id: true, name: true, email: true, role: true, color: true, avatar: true },
     orderBy: { name: 'asc' },
   })

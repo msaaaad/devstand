@@ -1,7 +1,9 @@
 import { Router } from 'express'
 import multer from 'multer'
-import { authenticate, canApprove, canManageMilestones, managerOnly } from '../middleware/auth'
+import { authenticate, canApprove, canManageMilestones, managerOnly, superAdminOnly } from '../middleware/auth'
 import * as auth from '../controllers/auth.controller'
+import * as admin from '../controllers/admin.controller'
+import * as leave from '../controllers/leave.controller'
 import * as standup from '../controllers/standup.controller'
 import * as milestone from '../controllers/milestone.controller'
 import * as history from '../controllers/history.controller'
@@ -17,6 +19,17 @@ router.post('/auth/login', auth.login)
 
 // --- Protected ---
 router.use(authenticate)
+
+// Admin (superadmin only)
+router.get('/admin/users', superAdminOnly, admin.listUsers)
+router.patch('/admin/users/:id/approve', superAdminOnly, admin.approveUser)
+router.patch('/admin/users/:id/role', superAdminOnly, admin.updateRole)
+router.delete('/admin/users/:id', superAdminOnly, admin.removeUser)
+router.get('/admin/leaves', superAdminOnly, leave.allRequests)
+router.patch('/admin/leaves/:id/approve', superAdminOnly, leave.approveRequest)
+router.patch('/admin/leaves/:id/reject', superAdminOnly, leave.rejectRequest)
+router.get('/admin/users/:id/balance', superAdminOnly, leave.getUserBalance)
+router.patch('/admin/users/:id/balance', superAdminOnly, leave.updateUserBalance)
 
 // Auth
 router.get('/auth/me', auth.me)
@@ -59,6 +72,11 @@ router.get('/history/:id', history.historyShow)
 router.get('/notifications', notification.index)
 router.put('/notifications/read-all', notification.markAllRead)
 router.put('/notifications/:id/read', notification.markRead)
+
+// Leaves (employee)
+router.get('/leaves/balance', leave.myBalance)
+router.get('/leaves/requests', leave.myRequests)
+router.post('/leaves/request', leave.submitRequest)
 
 // Learning
 router.get('/learning', learning.index)

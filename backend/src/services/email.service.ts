@@ -60,6 +60,47 @@ export async function sendTaskApproved(task: TaskWithRelations) {
   })
 }
 
+export async function sendLeaveRequest(req: {
+  subject: string
+  description: string
+  type: string
+  fromDate: string
+  toDate: string
+  days: number
+  user: { name: string; email: string }
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail) return
+
+  await transport.sendMail({
+    from: process.env.MAIL_FROM,
+    to: adminEmail,
+    subject: `[Leave Request] ${req.subject} — ${req.user.name}`,
+    html: base(`
+      <h2 style="color:#E6EDF3;margin-top:0;font-size:18px">📋 Leave Request Submitted</h2>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0">
+        <tr><td style="color:#8B949E;padding:6px 0;width:120px;font-size:13px">Employee</td>
+            <td style="color:#E6EDF3;font-size:13px;font-weight:600">${req.user.name}</td></tr>
+        <tr><td style="color:#8B949E;padding:6px 0;font-size:13px">Email</td>
+            <td style="color:#E6EDF3;font-size:13px">${req.user.email}</td></tr>
+        <tr><td style="color:#8B949E;padding:6px 0;font-size:13px">Leave Type</td>
+            <td style="color:#E6EDF3;font-size:13px;text-transform:capitalize">${req.type}</td></tr>
+        <tr><td style="color:#8B949E;padding:6px 0;font-size:13px">Period</td>
+            <td style="color:#E6EDF3;font-size:13px">${req.fromDate} → ${req.toDate} <span style="color:#6366f1">(${req.days} day${req.days > 1 ? 's' : ''})</span></td></tr>
+      </table>
+      <div style="background:#0D1117;border-left:4px solid #6366f1;padding:16px;border-radius:4px;margin:16px 0">
+        <p style="color:#8B949E;font-size:12px;margin:0 0 6px">Subject</p>
+        <p style="color:#E6EDF3;font-size:14px;font-weight:600;margin:0">${req.subject}</p>
+      </div>
+      <div style="background:#0D1117;border-left:4px solid #30363D;padding:16px;border-radius:4px;margin:16px 0">
+        <p style="color:#8B949E;font-size:12px;margin:0 0 6px">Description</p>
+        <p style="color:#E6EDF3;font-size:13px;margin:0;line-height:1.6">${req.description}</p>
+      </div>
+      <p style="color:#8B949E;font-size:12px">Please log in to DevStand to approve or reject this request.</p>
+    `),
+  })
+}
+
 export async function sendTaskRejected(task: TaskWithRelations) {
   if (!task.createdBy) return
   await transport.sendMail({

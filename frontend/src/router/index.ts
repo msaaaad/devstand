@@ -16,6 +16,8 @@ const router = createRouter({
         { path: 'milestones/:id', component: () => import('../views/MilestoneDetailView.vue') },
         { path: 'history', component: () => import('../views/HistoryView.vue') },
         { path: 'learning', component: () => import('../views/LearningView.vue') },
+        { path: 'leaves', component: () => import('../views/LeavesView.vue') },
+        { path: 'admin/users', component: () => import('../views/AdminUsersView.vue') },
       ],
     },
   ],
@@ -24,7 +26,10 @@ const router = createRouter({
 router.beforeEach((to) => {
   const isAuth = !!localStorage.getItem('ds_token')
   if (!to.meta.public && !isAuth) return '/login'
-  if (to.meta.public && isAuth) return '/board'
+  if (to.meta.public && isAuth) {
+    const user = JSON.parse(localStorage.getItem('ds_user') || 'null')
+    return user?.role === 'superadmin' ? '/leaves' : '/board'
+  }
 })
 
 export default router
