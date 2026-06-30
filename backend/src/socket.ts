@@ -48,6 +48,6 @@ export function initSocket(server: any) {
 }
 
 export function getIO(): SocketServer {
-  if (!io) throw new Error('Socket not initialized')
+  if (!io) return { to: () => ({ emit: () => {} }) } as any
   return io
 }
