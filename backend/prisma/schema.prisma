@@ -41,6 +41,8 @@ enum NotificationType {
   task_rejected
   task_self_assigned
   milestone_completed
+  leave_approved
+  leave_rejected
 }
 
 enum ReactionType {

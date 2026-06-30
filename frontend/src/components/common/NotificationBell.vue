@@ -26,7 +26,7 @@
             <div class="flex items-start gap-3">
               <span class="text-base mt-0.5">{{ typeIcon(n.type) }}</span>
               <div class="flex-1 min-w-0">
-                <p class="text-sm text-tx-primary leading-snug">{{ (n.data as any).message }}</p>
+                <p class="text-sm text-tx-primary leading-snug">{{ notifMessage(n) }}</p>
                 <p class="text-xs text-tx-muted mt-1">{{ timeAgo(n.createdAt) }}</p>
               </div>
               <div v-if="!n.readAt" class="w-2 h-2 rounded-full bg-accent flex-shrink-0 mt-1.5"></div>
@@ -53,7 +53,15 @@ const unreadCount = computed(() => store.state.unreadCount)
 const typeIcon = (type: string) => ({
   task_assigned: '📋', task_approved: '✅', task_rejected: '❌',
   task_self_assigned: '👋', milestone_completed: '🏆',
+  leave_approved: '🟢', leave_rejected: '🔴',
 }[type] || '🔔')
+
+function notifMessage(n: any): string {
+  const d = n.data as any
+  if (n.type === 'leave_approved') return `Your ${d.type} leave request "${d.subject}" was approved (${d.days} day${d.days > 1 ? 's' : ''}).`
+  if (n.type === 'leave_rejected') return `Your ${d.type} leave request "${d.subject}" was rejected.`
+  return d.message || ''
+}
 
 const timeAgo = (d: string) => formatDistanceToNow(new Date(d), { addSuffix: true })
 

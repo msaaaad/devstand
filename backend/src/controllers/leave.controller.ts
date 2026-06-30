@@ -4,6 +4,7 @@ import { differenceInCalendarDays, parseISO } from 'date-fns'
 import prisma from '../utils/prisma'
 import { AuthRequest } from '../types'
 import { sendLeaveRequest } from '../services/email.service'
+import { createNotification } from '../services/notification.service'
 
 const requestSchema = z.object({
   type: z.enum(['casual', 'sick']),
@@ -99,6 +100,12 @@ export async function approveRequest(req: AuthRequest, res: Response) {
     }),
   ])
 
+  createNotification(leaveReq.userId, 'leave_approved', {
+    subject: leaveReq.subject,
+    type: leaveReq.type,
+    days: leaveReq.days,
+  }).catch(() => {})
+
   res.json({ request: updated })
 }
 
@@ -108,6 +115,13 @@ export async function rejectRequest(req: AuthRequest, res: Response) {
   if (leaveReq.status !== 'pending') { res.status(409).json({ message: 'Already actioned' }); return }
 
   const updated = await prisma.leaveRequest.update({ where: { id: leaveReq.id }, data: { status: 'rejected' } })
+
+  createNotification(leaveReq.userId, 'leave_rejected', {
+    subject: leaveReq.subject,
+    type: leaveReq.type,
+    days: leaveReq.days,
+  }).catch(() => {})
+
   res.json({ request: updated })
 }
 
