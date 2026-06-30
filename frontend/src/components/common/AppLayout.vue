@@ -49,11 +49,11 @@
       <header class="h-14 border-b border-surface-border flex items-center justify-between px-6 bg-surface-raised flex-shrink-0">
         <h1 class="font-display text-base font-700 text-tx-primary">{{ pageTitle }}</h1>
         <div class="flex items-center gap-3">
-          <div class="flex items-center gap-1.5 text-xs text-tx-muted">
+          <div v-if="!isSuperAdmin" class="flex items-center gap-1.5 text-xs text-tx-muted">
             <span class="w-1.5 h-1.5 rounded-full" :class="isConnected ? 'bg-green-400' : 'bg-red-400'"></span>
             {{ isConnected ? 'Live' : 'Offline' }}
           </div>
-          <NotificationBell />
+          <NotificationBell v-if="!isSuperAdmin" />
         </div>
       </header>
 
